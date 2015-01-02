@@ -135,13 +135,13 @@ LOGGING = {
             'propagate': False,
         },
         'django.request': {
-            'handlers': ['error_file'],
+            'handlers': ['null'],
             'level': 'ERROR',
             'propagate': False,
         },
         # Enable this logger to see SQL queries
         'django.db.backends': {
-            'handlers': ['null', 'error_file'],
+            'handlers': ['null'],
             'level': 'INFO',
             'propagate': False,
         },
