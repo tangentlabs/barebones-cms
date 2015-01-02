@@ -2,3 +2,5 @@ django==1.7
 django-extensions==1.4.9
 psycopg2==2.5.4
 Werkzeug==0.9.6
+django-mptt==0.6.1
+ipdb==0.8

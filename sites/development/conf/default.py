@@ -53,6 +53,9 @@ INSTALLED_APPS = (
     'django.contrib.staticfiles',
     'django.contrib.sites',
     'django_extensions',
+    'barebones_cms',
+    # Calling the app simple_cms to make sure namespace override works
+    'apps.simple_cms',
 )
 
 MIDDLEWARE_CLASSES = (
@@ -72,6 +75,13 @@ WSGI_APPLICATION = 'wsgi.application'
 TEMPLATE_DIRS = (
     os.path.join(BASE_DIR, 'templates'),
 )
+
+# List of callables that know how to import templates from various sources.
+#TEMPLATE_LOADERS = (
+#    'django.template.loaders.filesystem.Loader',
+#    'django.template.loaders.app_directories.Loader',
+#)
+
 
 # Internationalization
 # https://docs.djangoproject.com/en/1.7/topics/i18n/
@@ -152,4 +162,6 @@ LOGGING = {
         },
     }
 }
+
+BB_CMS_APP_NAME = 'apps.simple_cms'
 

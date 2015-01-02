@@ -3,6 +3,24 @@ from mptt.models import MPTTModel, TreeForeignKey
 from django.db import models
 from django.contrib.contenttypes import generic
 from django.contrib.contenttypes.models import ContentType
+from django.conf import settings
+
+
+# Allow the cms app to be completely overridden with another namespace
+CMS_APP = getattr(settings, 'BB_CMS_APP_NAME', 'apps.cms').split('.')[-1]
+
+
+class BasePageTemplate(models.Model):
+    template_file = models.FileField(upload_to='templates/cms/', max_length=200)
+
+    class Meta:
+        abstract = True
+
+    def __unicode__(self):
+        return self.template_file.name
+
+    def __str__(self):
+        return self.__unicode__()
 
 
 class BasePage(MPTTModel):
@@ -10,7 +28,7 @@ class BasePage(MPTTModel):
     title = models.CharField(max_length=255)
     body = models.TextField()
     slug = models.CharField(max_length=100)
-    template = models.ForeignKey('cms.PageTemplate')
+    template = models.ForeignKey("%s.PageTemplate" % CMS_APP, related_name="template")
     is_deleted = models.BooleanField(default=False)
     is_published = models.BooleanField(default=False)
 
@@ -24,37 +42,27 @@ class BasePage(MPTTModel):
         abstract = True
 
 
-class Page(BasePage):
-    """ Separated this out to make sure things are a little more extendable
-    """
-    pass
-
-
-class PageTemplate(models.Model):
-    template_file = models.FileField(upload_to='templates/cms/', max_length=200)
-
-    def __unicode__(self):
-        return self.template_file.name
-
-    def __str__(self):
-        return self.__unicode__()
-
-
-class Region(models.Model):
+class BaseRegion(models.Model):
     name = models.CharField(max_length=255)
     block_name = models.CharField(max_length=255)
-    template = models.ForeignKey('cms.PageTemplate')
+    template = models.ForeignKey("%s.PageTemplate" % CMS_APP)
+
+    class Meta:
+        abstract = True
 
 
-class ContentBlockLink(models.Model):
+class BaseContentBlockLink(models.Model):
     """ Creates a generic link between content blocks and the page / regions.
         Required in order to make blocks of different types.
     """
-    page = models.ForeignKey('cms.Page')
-    region = models.ForeignKey('cms.Region', null=True, blank=True)
+    page = models.ForeignKey("%s.Page" % CMS_APP)
+    region = models.ForeignKey("%s.Region" % CMS_APP, null=True, blank=True)
     object_id = models.PositiveIntegerField(db_index=True)
     content_type = models.ForeignKey(ContentType, db_index=True)
     model_object = generic.GenericForeignKey('content_type', 'object_id')
+
+    class Meta:
+        abstract = True
 
 
 class BaseContentBlock(models.Model):
@@ -67,7 +75,6 @@ class BaseContentBlock(models.Model):
 
 
 # Content Blocks
-
 class SimpleContentBlock(BaseContentBlock):
     content = models.CharField(max_length=255)
 

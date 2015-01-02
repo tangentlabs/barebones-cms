@@ -3,8 +3,19 @@ import os
 from django.core.exceptions import MultipleObjectsReturned
 from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
+from django.db.models.loading import get_model
 
-from barebones_cms import models
+from barebones_cms.models import REGISTERED_CONTENT_BLOCKS
+
+# Allow the cms app to be completely overridden with another namespace
+CMS_APP = getattr(settings, 'BB_CMS_APP_NAME', 'apps.cms').split('.')[-1]
+
+
+# Import models using get_model so we get the right ones
+Page = get_model(CMS_APP, 'Page')
+PageTemplate = get_model(CMS_APP, 'PageTemplate')
+Region = get_model(CMS_APP, 'Region')
+ContentBlockLink = get_model(CMS_APP, 'ContentBlockLink')
 
 
 class PageService(object):
@@ -15,7 +26,7 @@ class PageService(object):
         # Get the root page for the path
         try:
             root_page = self.get_root_page_by_slug(parts.pop(0))
-        except (models.Page.DoesNotExist, MultipleObjectsReturned):
+        except (Page.DoesNotExist, MultipleObjectsReturned):
             # At least one slug failed to match. Return nothing
             return
 
@@ -28,7 +39,7 @@ class PageService(object):
         # being greedy will always ensure the correct page is returned.
         try:
             page = self.get_published_child(root_page, parts)
-        except (models.Page.DoesNotExist, MultipleObjectsReturned):
+        except (Page.DoesNotExist, MultipleObjectsReturned):
             # At least one slug failed to match. Return nothing
             return
         return page
@@ -44,7 +55,7 @@ class PageService(object):
 
     def get_root_page_by_slug(self, slug):
         try:
-            page = models.Page.objects.get(
+            page = Page.objects.get(
                 slug=slug, parent=None, is_deleted=False, is_published=True)
         except MultipleObjectsReturned:
             # Something is very wrong. There is most likely a data integrity
@@ -53,23 +64,23 @@ class PageService(object):
         return page
 
     def get_content_blocks_for_region(self, region, page):
-        block_links = models.ContentBlockLink.objects.filter(region=region, page=page)
+        block_links = ContentBlockLink.objects.filter(region=region, page=page)
         return [block.model_object for block in block_links]
 
     def get_all_active_root_pages(self):
-        return models.Page.objects.filter(is_deleted=False, parent=None)
+        return Page.objects.filter(is_deleted=False, parent=None)
 
     def get_page_templates(self):
-        return models.PageTemplate.objects.all()
+        return PageTemplate.objects.all()
 
     def get_page_template_by_page(self, page):
         return page.template
 
     def create_page_template(self, uploaded_file):
-        models.PageTemplate.objects.create(template_file=uploaded_file)
+        PageTemplate.objects.create(template_file=uploaded_file)
 
     def create_page(self, title, slug, page_template, parent=None, is_published=False):
-        models.Page.objects.create(title=title,
+        Page.objects.create(title=title,
                             slug=slug,
                             template=page_template,
                             parent=parent,
@@ -80,8 +91,8 @@ class PageService(object):
             the same proposed slug, return True as there is a conflict
         """
         try:
-            page = models.Page.objects.get(parent=parent, slug=slug, is_published=True)
-        except models.Page.DoesNotExist:
+            page = Page.objects.get(parent=parent, slug=slug, is_published=True)
+        except Page.DoesNotExist:
             return False
 
         if page_pk and int(page_pk) == page.pk:
@@ -115,21 +126,21 @@ class PageService(object):
         page.save()
 
     def get_page_by_pk(self, page_pk):
-        return models.Page.objects.get(pk=page_pk)
+        return Page.objects.get(pk=page_pk)
 
     def get_pages(self):
-        return models.Page.objects.filter(is_deleted=False)
+        return Page.objects.filter(is_deleted=False)
 
 
 class RegionService(object):
     def create_region(self, name, block_name, template):
-        models.Region.objects.create(
+        Region.objects.create(
             name=name, block_name=block_name, template=template)
 
 
 class ContentBlockService(object):
     def get_allowed_content_blocks(self):
-        return [(model[0], ContentType.objects.get_for_model(model[1]).pk) for model in models.REGISTERED_CONTENT_BLOCKS]
+        return [(model[0], ContentType.objects.get_for_model(model[1]).pk) for model in REGISTERED_CONTENT_BLOCKS]
 
     def get_contentblock_model(self, content_type):
         content_type = ContentType.objects.get(pk=content_type)
@@ -145,9 +156,9 @@ class ContentBlockService(object):
 
     def link_block(self, block, page_pk, region_pk, block_content_type):
         content_type = ContentType.objects.get(pk=block_content_type)
-        page = models.Page.objects.get(pk=page_pk)
-        region = models.Region.objects.get(pk=region_pk)
-        models.ContentBlockLink.objects.create(page=page,
+        page = Page.objects.get(pk=page_pk)
+        region = Region.objects.get(pk=region_pk)
+        ContentBlockLink.objects.create(page=page,
                                                region=region,
                                                object_id=block.pk,
                                                content_type=content_type,
