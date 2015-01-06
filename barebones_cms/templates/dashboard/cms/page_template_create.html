@@ -1,0 +1,10 @@
+<h1>Page Template Create</h1>
+
+<div>
+
+<form id="create-page-template-form" name="create-page-template-form" method="post" enctype="multipart/form-data" action="{% url "create-page-template" %}">
+{% csrf_token %}
+<p>{{ form.template_file.label }} {{ form.template_file }}</p>
+<button type="submit">Create Page Template</button>
+
+</div>

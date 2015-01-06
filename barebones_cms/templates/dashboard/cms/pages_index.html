@@ -1,0 +1,8 @@
+<h1>Pages Index</h1>
+
+<div>
+<p><a href="{% url "create-page" %}">Create New Page</a></p>
+    <div id="page-tree">
+    {{ page_tree_rendered|safe }}
+    </div>
+</div>

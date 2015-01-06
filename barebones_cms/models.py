@@ -26,7 +26,6 @@ class BasePageTemplate(models.Model):
 class BasePage(MPTTModel):
     parent = TreeForeignKey('self', null=True, blank=True, related_name='children')
     title = models.CharField(max_length=255)
-    body = models.TextField()
     slug = models.CharField(max_length=100)
     template = models.ForeignKey("%s.PageTemplate" % CMS_APP, related_name="template")
     is_deleted = models.BooleanField(default=False)

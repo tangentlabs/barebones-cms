@@ -1,0 +1,35 @@
+<h1>Page Edit</h1>
+
+<div>
+
+    <form id="create-page-form" name="create-page-form" method="post" action="{% url "edit-page" pk=page.pk %}">
+    {% csrf_token %}
+    <p>{{ form.title.label }} {{ form.title }}</p>
+    <p>{{ form.slug.label }} {{ form.slug }}</p>
+    <p>{{ form.page_template.label }} {{ form.page_template }} (<a href="{% url "create-page-template" %}">create a new page template</a>)</p>
+    <p>{{ form.parent.label }} {{ form.parent }}</p>
+    <p>{{ form.is_published.label }} {{ form.is_published }}</p>
+    <button type="submit">Save</button>
+    <hr />
+    <div>
+        {% for region, content_blocks in regions.iteritems %}
+            <div>
+                {{ region.name }} for block name {{ region.block_name }}
+                {% for content_block in content_blocks %}
+                <p>{{ content_block }}</p>
+                {% empty %}
+                No content blocks
+                {% endfor %}
+            </div>
+            {% for block_type in allowed_content_blocks %}
+            <p><a href="{% url 'create-content-block' page=page.pk region=region.pk content_type=block_type.1 %}">Add {{ block_type.0 }} block</a></p>
+            {% endfor %}
+        {% empty %}
+        No regions available
+        {% endfor %}
+        <div>
+        <a href="{% url "create-template-region-for-page" page=page.pk template=page_template.pk %}">Create New Region</a>
+        </div>
+    </div>
+
+</div>

@@ -1,0 +1,14 @@
+<div>{{ page.title }}</div>
+Test Template!
+
+<p>Start Region One</p>
+{% for content_block in region_one.content_blocks %}
+    <p><b>{{ content_block }}</b></p>
+{% endfor %}
+<p>End Region One</p>
+
+<p>Start Region Two</p>
+{% for content_block in region_two.content_blocks %}
+    <p>{{ content_block }}</p>
+{% endfor %}
+<p>End Region Two</p>
