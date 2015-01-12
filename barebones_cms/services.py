@@ -1,6 +1,5 @@
-import os
-
 from django.core.exceptions import MultipleObjectsReturned
+from django.core.urlresolvers import reverse_lazy
 from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
 from django.db.models.loading import get_model
@@ -9,6 +8,8 @@ from barebones_cms.models import REGISTERED_CONTENT_BLOCKS
 
 # Allow the cms app to be completely overridden with another namespace
 CMS_APP = getattr(settings, 'BB_CMS_APP_NAME', 'apps.cms').split('.')[-1]
+# Allow url namespacing for the dashboard
+DASHBOARD_NAMESPACE = getattr(settings, 'BB_DASHBOARD_NAMESPACE')
 
 
 # Import models using get_model so we get the right ones
@@ -159,10 +160,31 @@ class ContentBlockService(object):
         page = Page.objects.get(pk=page_pk)
         region = Region.objects.get(pk=region_pk)
         ContentBlockLink.objects.create(page=page,
-                                               region=region,
-                                               object_id=block.pk,
-                                               content_type=content_type,
-                                               model_object=block)
+                                        region=region,
+                                        object_id=block.pk,
+                                        content_type=content_type,
+                                        model_object=block)
+
+
+class URLService(object):
+    def get_page_edit_url(self, pk):
+        default_name = 'edit-page'
+        if DASHBOARD_NAMESPACE is None:
+            return reverse_lazy(default_name, kwargs={'pk': pk})
+        return reverse_lazy(DASHBOARD_NAMESPACE + ':' + default_name,
+                            kwargs={'pk': pk})
+
+    def get_page_create_url(self):
+        default_name = 'create-page'
+        if DASHBOARD_NAMESPACE is None:
+            return reverse_lazy(default_name)
+        return reverse_lazy(DASHBOARD_NAMESPACE + ':' + default_name)
+
+    def get_page_index_url(self):
+        default_name = 'pages-index'
+        if DASHBOARD_NAMESPACE is None:
+            return reverse_lazy(default_name)
+        return reverse_lazy(DASHBOARD_NAMESPACE + ':' + default_name)
 
 
 # Helper exceptions

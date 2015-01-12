@@ -1,10 +1,10 @@
 from django.views.generic import View, TemplateView, FormView
 from django.http import Http404, HttpResponseRedirect
 from django.shortcuts import render
-from django.template import RequestContext, loader, Context
-from django.core.urlresolvers import reverse
+from django.template import loader, Context
 
-from barebones_cms.services import PageService, RegionService, ContentBlockService
+from barebones_cms.services import (
+    PageService, RegionService, ContentBlockService, URLService)
 from barebones_cms import forms
 
 
@@ -49,27 +49,27 @@ class DashboardPagesView(TemplateView):
         return context
 
     def get_page_render(self, page):
+        edit_url = URLService().get_page_edit_url(page.pk)
         page_html = '<ul>'
         if page.is_leaf_node():
             page_html += "<li><a href='%s'>%s</a></li>" % (
-                reverse('edit-page', kwargs={'pk': page.pk}), page.slug)
+                edit_url, page.slug)
         else:
             page_html += "<li><a href='%s'>%s</a></li><ul>%s</ul>" % (
-                reverse('edit-page', kwargs={'pk': page.pk}),
-                page.slug, self.get_tree_render(page.children.all()))
+                edit_url, page.slug, self.get_tree_render(page.children.all()))
         page_html += '</ul>'
         return page_html
 
     def get_tree_render(self, pages):
         page_html = ''
         for page in pages:
+            edit_url = URLService().get_page_edit_url(page.pk)
             if page.is_leaf_node():
                 page_html += "<li><a href='%s'>%s</a></li>" % (
-                    reverse('edit-page', kwargs={'pk': page.pk}), page.slug)
+                    edit_url, page.slug)
             else:
                 page_html = "<li><a href='%s'>%s</a></li><ul>%s</ul>" % (
-                    reverse('edit-page', kwargs={'pk': page.pk}),
-                    page.slug, self.get_tree_render(page.children.all()))
+                    edit_url, page.slug, self.get_tree_render(page.children.all()))
         return page_html
 
 
@@ -87,7 +87,7 @@ class DashboardPageCreateView(FormView):
         return HttpResponseRedirect(self.get_success_url())
 
     def get_success_url(self):
-        return reverse('pages-index')
+        return URLService().get_page_index_url()
 
 
 class DashboardPageTemplateCreateView(FormView):
@@ -99,7 +99,7 @@ class DashboardPageTemplateCreateView(FormView):
         return HttpResponseRedirect(self.get_success_url())
 
     def get_success_url(self):
-        return reverse('create-page')
+        return URLService().get_page_create_url()
 
 
 class DashboardPageEditView(FormView):
@@ -141,7 +141,7 @@ class DashboardPageEditView(FormView):
         return HttpResponseRedirect(self.get_success_url())
 
     def get_success_url(self):
-        return reverse('pages-index')
+        return URLService().get_page_index_url()
 
 
 class DashboardTemplateRegionCreateView(FormView):
@@ -163,7 +163,7 @@ class DashboardTemplateRegionCreateView(FormView):
         return HttpResponseRedirect(self.get_success_url())
 
     def get_success_url(self):
-        return reverse('edit-page', kwargs={'pk': int(self.kwargs['page'])})
+        return URLService().get_page_edit_url(int(self.kwargs['page']))
 
 
 class DashboardContentBlockCreateView(TemplateView):
@@ -183,7 +183,7 @@ class DashboardContentBlockCreateView(TemplateView):
         context = super(DashboardContentBlockCreateView, self).get_context_data(*args, **kwargs)
         context.update(self.kwargs)
 
-        if kwargs.has_key('form'):
+        if 'form' in kwargs.keys():
             form = kwargs['form']
         else:
             form = self.get_form_class()()
@@ -211,4 +211,4 @@ class DashboardContentBlockCreateView(TemplateView):
         return self.render_to_response(self.get_context_data(form=form))
 
     def get_success_url(self):
-        return reverse('edit-page', kwargs={'pk': int(self.kwargs['page'])})
+        return URLService().get_page_edit_url(int(self.kwargs['page']))
