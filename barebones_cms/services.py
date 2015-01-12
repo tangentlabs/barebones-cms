@@ -9,7 +9,7 @@ from barebones_cms.models import REGISTERED_CONTENT_BLOCKS
 # Allow the cms app to be completely overridden with another namespace
 CMS_APP = getattr(settings, 'BB_CMS_APP_NAME', 'apps.cms').split('.')[-1]
 # Allow url namespacing for the dashboard
-DASHBOARD_NAMESPACE = getattr(settings, 'BB_DASHBOARD_NAMESPACE')
+DASHBOARD_NAMESPACE = getattr(settings, 'BB_DASHBOARD_NAMESPACE', None)
 
 
 # Import models using get_model so we get the right ones
