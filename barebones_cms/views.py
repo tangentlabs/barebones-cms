@@ -79,12 +79,7 @@ class DashboardPageCreateView(FormView):
     form_class = forms.PageForm
 
     def form_valid(self, form):
-        PageService().create_new_page(
-            form.cleaned_data['title'],
-            form.cleaned_data['slug'],
-            form.cleaned_data['template'],
-            form.cleaned_data['parent'],
-            is_published=form.cleaned_data.get('is_published', False))
+        PageService().create_new_page(**form.cleaned_data)
         return HttpResponseRedirect(self.get_success_url())
 
     def get_success_url(self):
@@ -131,13 +126,7 @@ class DashboardPageEditView(FormView):
         return context
 
     def form_valid(self, form):
-        PageService().edit_page(
-            self.kwargs['pk'],
-            form.cleaned_data['title'],
-            form.cleaned_data['slug'],
-            form.cleaned_data['template'],
-            form.cleaned_data['parent'],
-            is_published=form.cleaned_data.get('is_published', False))
+        PageService().edit_page(self.kwargs['pk'], **form.cleaned_data)
         return HttpResponseRedirect(self.get_success_url())
 
     def get_success_url(self):

@@ -80,12 +80,14 @@ class PageService(object):
     def create_page_template(self, uploaded_file):
         PageTemplate.objects.create(template_file=uploaded_file)
 
-    def create_page(self, title, slug, page_template, parent=None, is_published=False):
+    def create_page(self, title, slug, page_template, parent=None,
+                    is_published=False, **extra_fields):
         Page.objects.create(title=title,
                             slug=slug,
                             template=page_template,
                             parent=parent,
-                            is_published=is_published)
+                            is_published=is_published,
+                            **extra_fields)
 
     def check_slug_conflict(self, slug, parent, page_pk=None):
         """ Tries to find a conflicting slug. If the parent has a child with
@@ -100,7 +102,8 @@ class PageService(object):
             return False
         return True
 
-    def create_new_page(self, title, slug, page_template, parent=None, is_published=False):
+    def create_new_page(self, title, slug, page_template, parent=None,
+                        is_published=False, **extra_fields):
         if is_published:
             # Try and get a page that would conflict with this new one first.
             # We don't do this for unpublished pages as there can be mulitple
@@ -111,7 +114,8 @@ class PageService(object):
         self.create_page(title, slug,
                          page_template,
                          parent=parent,
-                         is_published=is_published)
+                         is_published=is_published,
+                         **extra_fields)
 
     def edit_page(self, page_pk, title, slug, page_template, parent, is_published):
         if is_published:
