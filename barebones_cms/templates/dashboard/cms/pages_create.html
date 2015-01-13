@@ -5,7 +5,7 @@
 {% csrf_token %}
 <p>{{ form.title.label }} {{ form.title }}</p>
 <p>{{ form.slug.label }} {{ form.slug }}</p>
-<p>{{ form.page_template.label }} {{ form.page_template }} (<a href="{% url "create-page-template" %}">create a new page template</a>)</p>
+<p>{{ form.template.label }} {{ form.template }} (<a href="{% url "create-page-template" %}">create a new page template</a>)</p>
 <p>{{ form.parent.label }} {{ form.parent }}</p>
 <p>{{ form.is_published.label }} {{ form.is_published }}</p>
 <button type="submit">Create</button>

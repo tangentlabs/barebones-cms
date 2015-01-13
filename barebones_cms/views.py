@@ -82,7 +82,7 @@ class DashboardPageCreateView(FormView):
         PageService().create_new_page(
             form.cleaned_data['title'],
             form.cleaned_data['slug'],
-            form.cleaned_data['page_template'],
+            form.cleaned_data['template'],
             form.cleaned_data['parent'],
             is_published=form.cleaned_data.get('is_published', False))
         return HttpResponseRedirect(self.get_success_url())
@@ -135,7 +135,7 @@ class DashboardPageEditView(FormView):
             self.kwargs['pk'],
             form.cleaned_data['title'],
             form.cleaned_data['slug'],
-            form.cleaned_data['page_template'],
+            form.cleaned_data['template'],
             form.cleaned_data['parent'],
             is_published=form.cleaned_data.get('is_published', False))
         return HttpResponseRedirect(self.get_success_url())
