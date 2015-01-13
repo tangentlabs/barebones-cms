@@ -2,6 +2,7 @@ from django.views.generic import View, TemplateView, FormView
 from django.http import Http404, HttpResponseRedirect
 from django.shortcuts import render
 from django.template import loader, Context
+from django.forms import model_to_dict
 
 from barebones_cms.services import (
     PageService, RegionService, ContentBlockService, URLService)
@@ -106,25 +107,25 @@ class DashboardPageEditView(FormView):
     template_name = 'dashboard/cms/pages_edit.html'
     form_class = forms.PageForm
 
+    def dispatch(self, request, *args, **kwargs):
+        self.object = PageService().get_page_by_pk(self.kwargs['pk'])
+        return super(DashboardPageEditView, self).dispatch(request, *args, **kwargs)
+
+    def get_initial(self):
+        return model_to_dict(
+            self.object, fields=self.form_class.base_fields)
+
     def get_context_data(self, *args, **kwargs):
         context = super(DashboardPageEditView, self).get_context_data(*args, **kwargs)
 
         service = PageService()
+        template = service.get_page_template_by_page(self.object)
 
-        page = service.get_page_by_pk(self.kwargs['pk'])
-        template = service.get_page_template_by_page(page)
-
-        context['page'] = page
-
-        context['form'].fields['title'].initial = context['page'].title
-        context['form'].fields['slug'].initial = context['page'].slug
-        context['form'].fields['page_template'].initial = context['page'].template
-        context['form'].fields['parent'].initial = context['page'].parent
-        context['form'].fields['is_published'].initial = context['page'].is_published
+        context['page'] = self.object
         context['page_template'] = template
         region_context = {}
-        for region in page.template.region_set.all():
-            content_blocks = service.get_content_blocks_for_region(region, page)
+        for region in self.object.template.region_set.all():
+            content_blocks = service.get_content_blocks_for_region(region, self.object)
             region_context[region] = content_blocks
         context['regions'] = region_context
         context['allowed_content_blocks'] = ContentBlockService().get_allowed_content_blocks()

@@ -70,4 +70,5 @@ Page templates have two functions:
 Settings
 ---------
 BB_CMS_APP_NAME - name of override app
+
 BB_DASHBOARD_NAMESPACE - dashboard namespace to use for cms management pages
