@@ -75,7 +75,7 @@ class PageService(object):
         return PageTemplate.objects.all()
 
     def get_page_template_by_page(self, page):
-        return page.template
+        return page.page_template
 
     def create_page_template(self, uploaded_file):
         PageTemplate.objects.create(template_file=uploaded_file)
@@ -84,7 +84,7 @@ class PageService(object):
                     is_published=False, **extra_fields):
         Page.objects.create(title=title,
                             slug=slug,
-                            template=page_template,
+                            page_template=page_template,
                             parent=parent,
                             is_published=is_published,
                             **extra_fields)
@@ -125,7 +125,7 @@ class PageService(object):
         page = self.get_page_by_pk(page_pk)
         page.title = title
         page.slug = slug
-        page.template = page_template
+        page.page_template = page_template
         page.parent = parent
         page.is_published = is_published
         page.save()

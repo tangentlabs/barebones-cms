@@ -17,7 +17,7 @@ class ServeCMSPageView(View):
             raise Http404
 
         context = {'page': page}
-        for region in page.template.region_set.all():
+        for region in page.page_template.region_set.all():
             content_blocks = service.get_content_blocks_for_region(region, page)
             rendered_blocks = []
             for block in content_blocks:
@@ -27,7 +27,7 @@ class ServeCMSPageView(View):
                 rendered_blocks.append(block_template.render(Context(block_context)))
             context[region.block_name] = {'content_blocks': rendered_blocks}
 
-        return render(request, page.template.template_file.path, context)
+        return render(request, page.page_template.template_file.path, context)
 
 
 class DashboardPagesView(TemplateView):
@@ -113,12 +113,12 @@ class DashboardPageEditView(FormView):
         context = super(DashboardPageEditView, self).get_context_data(*args, **kwargs)
 
         service = PageService()
-        template = service.get_page_template_by_page(self.object)
+        page_template = service.get_page_template_by_page(self.object)
 
         context['page'] = self.object
-        context['page_template'] = template
+        context['page_template'] = page_template
         region_context = {}
-        for region in self.object.template.region_set.all():
+        for region in self.object.page_template.region_set.all():
             content_blocks = service.get_content_blocks_for_region(region, self.object)
             region_context[region] = content_blocks
         context['regions'] = region_context
