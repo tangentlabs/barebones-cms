@@ -78,16 +78,16 @@ class PageService(object):
         return page.page_template
 
     def create_page_template(self, uploaded_file):
-        PageTemplate.objects.create(template_file=uploaded_file)
+        return PageTemplate.objects.create(template_file=uploaded_file)
 
     def create_page(self, title, slug, page_template, parent=None,
                     is_published=False, **extra_fields):
-        Page.objects.create(title=title,
-                            slug=slug,
-                            page_template=page_template,
-                            parent=parent,
-                            is_published=is_published,
-                            **extra_fields)
+        return Page.objects.create(title=title,
+                                   slug=slug,
+                                   page_template=page_template,
+                                   parent=parent,
+                                   is_published=is_published,
+                                   **extra_fields)
 
     def check_slug_conflict(self, slug, parent, page_pk=None):
         """ Tries to find a conflicting slug. If the parent has a child with
@@ -111,11 +111,11 @@ class PageService(object):
             conflicts = self.check_slug_conflict(slug, parent)
             if conflicts:
                 raise PageConflictingSlugException
-        self.create_page(title, slug,
-                         page_template,
-                         parent=parent,
-                         is_published=is_published,
-                         **extra_fields)
+        return self.create_page(title, slug,
+                                page_template,
+                                parent=parent,
+                                is_published=is_published,
+                                **extra_fields)
 
     def edit_page(self, page_pk, title, slug, page_template, parent, is_published):
         if is_published:
@@ -129,6 +129,7 @@ class PageService(object):
         page.parent = parent
         page.is_published = is_published
         page.save()
+        return page
 
     def get_page_by_pk(self, page_pk):
         return Page.objects.get(pk=page_pk)
