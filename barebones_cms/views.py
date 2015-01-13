@@ -112,8 +112,7 @@ class DashboardPageEditView(FormView):
         return super(DashboardPageEditView, self).dispatch(request, *args, **kwargs)
 
     def get_initial(self):
-        return model_to_dict(
-            self.object, fields=self.form_class.base_fields)
+        return model_to_dict(self.object)
 
     def get_context_data(self, *args, **kwargs):
         context = super(DashboardPageEditView, self).get_context_data(*args, **kwargs)

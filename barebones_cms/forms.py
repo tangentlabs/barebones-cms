@@ -1,5 +1,6 @@
 from django import forms
 from django.forms.models import modelform_factory
+from django.utils.translation import ugettext_lazy as _
 
 from barebones_cms.services import PageService
 
@@ -7,13 +8,13 @@ from barebones_cms.services import PageService
 class PageForm(forms.Form):
     title = forms.CharField(max_length=255)
     slug = forms.CharField(max_length=255)
-    page_template = forms.ModelChoiceField(queryset=None)
+    template = forms.ModelChoiceField(queryset=None, label=_("Page template"))
     parent = forms.ModelChoiceField(queryset=None, required=False)
     is_published = forms.BooleanField(required=False)
 
     def __init__(self, *args, **kwargs):
         super(PageForm, self).__init__(*args, **kwargs)
-        self.fields['page_template'].queryset = self.get_page_template_queryset()
+        self.fields['template'].queryset = self.get_page_template_queryset()
         self.fields['parent'].queryset = self.get_page_parent_queryset()
 
     def get_page_template_queryset(self):
