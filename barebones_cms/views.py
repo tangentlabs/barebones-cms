@@ -2,7 +2,6 @@ from django.views.generic import View, TemplateView, FormView
 from django.http import Http404, HttpResponseRedirect
 from django.shortcuts import render
 from django.template import loader, Context
-from django.forms import model_to_dict
 
 from barebones_cms.services import (
     PageService, RegionService, ContentBlockService, URLService)
@@ -107,7 +106,7 @@ class DashboardPageEditView(FormView):
         return super(DashboardPageEditView, self).dispatch(request, *args, **kwargs)
 
     def get_initial(self):
-        return model_to_dict(self.object)
+        return PageService().get_page_fields_as_dict(self.object)
 
     def get_context_data(self, *args, **kwargs):
         context = super(DashboardPageEditView, self).get_context_data(*args, **kwargs)

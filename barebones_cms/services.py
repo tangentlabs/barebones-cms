@@ -3,6 +3,7 @@ from django.core.urlresolvers import reverse_lazy
 from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
 from django.db.models.loading import get_model
+from django.forms import model_to_dict
 
 from barebones_cms.models import REGISTERED_CONTENT_BLOCKS
 
@@ -136,6 +137,9 @@ class PageService(object):
 
     def get_pages(self):
         return Page.objects.filter(is_deleted=False)
+
+    def get_page_fields_as_dict(self, page):
+        return model_to_dict(page)
 
 
 class RegionService(object):
