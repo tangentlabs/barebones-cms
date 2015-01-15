@@ -1,14 +1,16 @@
-import os
-
 from django.core.exceptions import MultipleObjectsReturned
+from django.core.urlresolvers import reverse_lazy
 from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
 from django.db.models.loading import get_model
+from django.forms import model_to_dict
 
 from barebones_cms.models import REGISTERED_CONTENT_BLOCKS
 
 # Allow the cms app to be completely overridden with another namespace
 CMS_APP = getattr(settings, 'BB_CMS_APP_NAME', 'apps.cms').split('.')[-1]
+# Allow url namespacing for the dashboard
+DASHBOARD_NAMESPACE = getattr(settings, 'BB_DASHBOARD_NAMESPACE', None)
 
 
 # Import models using get_model so we get the right ones
@@ -74,17 +76,19 @@ class PageService(object):
         return PageTemplate.objects.all()
 
     def get_page_template_by_page(self, page):
-        return page.template
+        return page.page_template
 
     def create_page_template(self, uploaded_file):
-        PageTemplate.objects.create(template_file=uploaded_file)
+        return PageTemplate.objects.create(template_file=uploaded_file)
 
-    def create_page(self, title, slug, page_template, parent=None, is_published=False):
-        Page.objects.create(title=title,
-                            slug=slug,
-                            template=page_template,
-                            parent=parent,
-                            is_published=is_published)
+    def create_page(self, title, slug, page_template, parent=None,
+                    is_published=False, **extra_fields):
+        return Page.objects.create(title=title,
+                                   slug=slug,
+                                   page_template=page_template,
+                                   parent=parent,
+                                   is_published=is_published,
+                                   **extra_fields)
 
     def check_slug_conflict(self, slug, parent, page_pk=None):
         """ Tries to find a conflicting slug. If the parent has a child with
@@ -99,7 +103,8 @@ class PageService(object):
             return False
         return True
 
-    def create_new_page(self, title, slug, page_template, parent=None, is_published=False):
+    def create_new_page(self, title, slug, page_template, parent=None,
+                        is_published=False, **extra_fields):
         if is_published:
             # Try and get a page that would conflict with this new one first.
             # We don't do this for unpublished pages as there can be mulitple
@@ -107,10 +112,11 @@ class PageService(object):
             conflicts = self.check_slug_conflict(slug, parent)
             if conflicts:
                 raise PageConflictingSlugException
-        self.create_page(title, slug,
-                         page_template,
-                         parent=parent,
-                         is_published=is_published)
+        return self.create_page(title, slug,
+                                page_template,
+                                parent=parent,
+                                is_published=is_published,
+                                **extra_fields)
 
     def edit_page(self, page_pk, title, slug, page_template, parent, is_published):
         if is_published:
@@ -120,10 +126,11 @@ class PageService(object):
         page = self.get_page_by_pk(page_pk)
         page.title = title
         page.slug = slug
-        page.template = page_template
+        page.page_template = page_template
         page.parent = parent
         page.is_published = is_published
         page.save()
+        return page
 
     def get_page_by_pk(self, page_pk):
         return Page.objects.get(pk=page_pk)
@@ -131,11 +138,17 @@ class PageService(object):
     def get_pages(self):
         return Page.objects.filter(is_deleted=False)
 
+    def get_page_fields_as_dict(self, page):
+        return model_to_dict(page)
+
 
 class RegionService(object):
     def create_region(self, name, block_name, template):
         Region.objects.create(
             name=name, block_name=block_name, template=template)
+
+    def get_regions_for_page(self, page):
+        return page.page_template.region_set.all()
 
 
 class ContentBlockService(object):
@@ -159,10 +172,31 @@ class ContentBlockService(object):
         page = Page.objects.get(pk=page_pk)
         region = Region.objects.get(pk=region_pk)
         ContentBlockLink.objects.create(page=page,
-                                               region=region,
-                                               object_id=block.pk,
-                                               content_type=content_type,
-                                               model_object=block)
+                                        region=region,
+                                        object_id=block.pk,
+                                        content_type=content_type,
+                                        model_object=block)
+
+
+class URLService(object):
+    def get_page_edit_url(self, pk):
+        default_name = 'edit-page'
+        if DASHBOARD_NAMESPACE is None:
+            return reverse_lazy(default_name, kwargs={'pk': pk})
+        return reverse_lazy(DASHBOARD_NAMESPACE + ':' + default_name,
+                            kwargs={'pk': pk})
+
+    def get_page_create_url(self):
+        default_name = 'create-page'
+        if DASHBOARD_NAMESPACE is None:
+            return reverse_lazy(default_name)
+        return reverse_lazy(DASHBOARD_NAMESPACE + ':' + default_name)
+
+    def get_page_index_url(self):
+        default_name = 'pages-index'
+        if DASHBOARD_NAMESPACE is None:
+            return reverse_lazy(default_name)
+        return reverse_lazy(DASHBOARD_NAMESPACE + ':' + default_name)
 
 
 # Helper exceptions

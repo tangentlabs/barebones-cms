@@ -1,10 +1,10 @@
 from django.views.generic import View, TemplateView, FormView
 from django.http import Http404, HttpResponseRedirect
 from django.shortcuts import render
-from django.template import RequestContext, loader, Context
-from django.core.urlresolvers import reverse
+from django.template import loader, Context
 
-from barebones_cms.services import PageService, RegionService, ContentBlockService
+from barebones_cms.services import (
+    PageService, RegionService, ContentBlockService, URLService)
 from barebones_cms import forms
 
 
@@ -16,7 +16,7 @@ class ServeCMSPageView(View):
             raise Http404
 
         context = {'page': page}
-        for region in page.template.region_set.all():
+        for region in RegionService().get_regions_for_page(page):
             content_blocks = service.get_content_blocks_for_region(region, page)
             rendered_blocks = []
             for block in content_blocks:
@@ -26,7 +26,7 @@ class ServeCMSPageView(View):
                 rendered_blocks.append(block_template.render(Context(block_context)))
             context[region.block_name] = {'content_blocks': rendered_blocks}
 
-        return render(request, page.template.template_file.path, context)
+        return render(request, page.page_template.template_file.path, context)
 
 
 class DashboardPagesView(TemplateView):
@@ -49,27 +49,27 @@ class DashboardPagesView(TemplateView):
         return context
 
     def get_page_render(self, page):
+        edit_url = URLService().get_page_edit_url(page.pk)
         page_html = '<ul>'
         if page.is_leaf_node():
             page_html += "<li><a href='%s'>%s</a></li>" % (
-                reverse('edit-page', kwargs={'pk': page.pk}), page.slug)
+                edit_url, page.slug)
         else:
             page_html += "<li><a href='%s'>%s</a></li><ul>%s</ul>" % (
-                reverse('edit-page', kwargs={'pk': page.pk}),
-                page.slug, self.get_tree_render(page.children.all()))
+                edit_url, page.slug, self.get_tree_render(page.children.all()))
         page_html += '</ul>'
         return page_html
 
     def get_tree_render(self, pages):
         page_html = ''
         for page in pages:
+            edit_url = URLService().get_page_edit_url(page.pk)
             if page.is_leaf_node():
                 page_html += "<li><a href='%s'>%s</a></li>" % (
-                    reverse('edit-page', kwargs={'pk': page.pk}), page.slug)
+                    edit_url, page.slug)
             else:
                 page_html = "<li><a href='%s'>%s</a></li><ul>%s</ul>" % (
-                    reverse('edit-page', kwargs={'pk': page.pk}),
-                    page.slug, self.get_tree_render(page.children.all()))
+                    edit_url, page.slug, self.get_tree_render(page.children.all()))
         return page_html
 
 
@@ -78,16 +78,11 @@ class DashboardPageCreateView(FormView):
     form_class = forms.PageForm
 
     def form_valid(self, form):
-        PageService().create_new_page(
-            form.cleaned_data['title'],
-            form.cleaned_data['slug'],
-            form.cleaned_data['page_template'],
-            form.cleaned_data['parent'],
-            is_published=form.cleaned_data.get('is_published', False))
+        PageService().create_new_page(**form.cleaned_data)
         return HttpResponseRedirect(self.get_success_url())
 
     def get_success_url(self):
-        return reverse('pages-index')
+        return URLService().get_page_index_url()
 
 
 class DashboardPageTemplateCreateView(FormView):
@@ -99,49 +94,42 @@ class DashboardPageTemplateCreateView(FormView):
         return HttpResponseRedirect(self.get_success_url())
 
     def get_success_url(self):
-        return reverse('create-page')
+        return URLService().get_page_create_url()
 
 
 class DashboardPageEditView(FormView):
     template_name = 'dashboard/cms/pages_edit.html'
     form_class = forms.PageForm
 
+    def dispatch(self, request, *args, **kwargs):
+        self.object = PageService().get_page_by_pk(self.kwargs['pk'])
+        return super(DashboardPageEditView, self).dispatch(request, *args, **kwargs)
+
+    def get_initial(self):
+        return PageService().get_page_fields_as_dict(self.object)
+
     def get_context_data(self, *args, **kwargs):
         context = super(DashboardPageEditView, self).get_context_data(*args, **kwargs)
 
         service = PageService()
+        page_template = service.get_page_template_by_page(self.object)
 
-        page = service.get_page_by_pk(self.kwargs['pk'])
-        template = service.get_page_template_by_page(page)
-
-        context['page'] = page
-
-        context['form'].fields['title'].initial = context['page'].title
-        context['form'].fields['slug'].initial = context['page'].slug
-        context['form'].fields['page_template'].initial = context['page'].template
-        context['form'].fields['parent'].initial = context['page'].parent
-        context['form'].fields['is_published'].initial = context['page'].is_published
-        context['page_template'] = template
+        context['page'] = self.object
+        context['page_template'] = page_template
         region_context = {}
-        for region in page.template.region_set.all():
-            content_blocks = service.get_content_blocks_for_region(region, page)
+        for region in RegionService().get_regions_for_page(self.object):
+            content_blocks = service.get_content_blocks_for_region(region, self.object)
             region_context[region] = content_blocks
         context['regions'] = region_context
         context['allowed_content_blocks'] = ContentBlockService().get_allowed_content_blocks()
         return context
 
     def form_valid(self, form):
-        PageService().edit_page(
-            self.kwargs['pk'],
-            form.cleaned_data['title'],
-            form.cleaned_data['slug'],
-            form.cleaned_data['page_template'],
-            form.cleaned_data['parent'],
-            is_published=form.cleaned_data.get('is_published', False))
+        PageService().edit_page(self.kwargs['pk'], **form.cleaned_data)
         return HttpResponseRedirect(self.get_success_url())
 
     def get_success_url(self):
-        return reverse('pages-index')
+        return URLService().get_page_index_url()
 
 
 class DashboardTemplateRegionCreateView(FormView):
@@ -163,7 +151,7 @@ class DashboardTemplateRegionCreateView(FormView):
         return HttpResponseRedirect(self.get_success_url())
 
     def get_success_url(self):
-        return reverse('edit-page', kwargs={'pk': int(self.kwargs['page'])})
+        return URLService().get_page_edit_url(int(self.kwargs['page']))
 
 
 class DashboardContentBlockCreateView(TemplateView):
@@ -183,7 +171,7 @@ class DashboardContentBlockCreateView(TemplateView):
         context = super(DashboardContentBlockCreateView, self).get_context_data(*args, **kwargs)
         context.update(self.kwargs)
 
-        if kwargs.has_key('form'):
+        if 'form' in kwargs.keys():
             form = kwargs['form']
         else:
             form = self.get_form_class()()
@@ -211,4 +199,4 @@ class DashboardContentBlockCreateView(TemplateView):
         return self.render_to_response(self.get_context_data(form=form))
 
     def get_success_url(self):
-        return reverse('edit-page', kwargs={'pk': int(self.kwargs['page'])})
+        return URLService().get_page_edit_url(int(self.kwargs['page']))
