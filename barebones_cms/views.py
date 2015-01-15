@@ -16,7 +16,7 @@ class ServeCMSPageView(View):
             raise Http404
 
         context = {'page': page}
-        for region in page.page_template.region_set.all():
+        for region in RegionService().get_regions_for_page(page):
             content_blocks = service.get_content_blocks_for_region(region, page)
             rendered_blocks = []
             for block in content_blocks:
@@ -117,7 +117,7 @@ class DashboardPageEditView(FormView):
         context['page'] = self.object
         context['page_template'] = page_template
         region_context = {}
-        for region in self.object.page_template.region_set.all():
+        for region in RegionService().get_regions_for_page(self.object):
             content_blocks = service.get_content_blocks_for_region(region, self.object)
             region_context[region] = content_blocks
         context['regions'] = region_context

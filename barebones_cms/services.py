@@ -147,6 +147,9 @@ class RegionService(object):
         Region.objects.create(
             name=name, block_name=block_name, template=template)
 
+    def get_regions_for_page(self, page):
+        return page.page_template.region_set.all()
+
 
 class ContentBlockService(object):
     def get_allowed_content_blocks(self):
