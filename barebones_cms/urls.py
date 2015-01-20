@@ -14,5 +14,6 @@ urlpatterns = patterns('',
     url('^dashboard/cms/page-template/edit/(?P<pk>\d+)/$', views.DashboardPageTemplateEditView.as_view(), name="edit-page-template"),
     url('^dashboard/cms/template-region/create/(?P<page>\d+)/(?P<template>\d+)/$', views.DashboardTemplateRegionCreateView.as_view(), name="create-template-region-for-page"),
     url('^dashboard/cms/content-block/create/(?P<page>\d+)/(?P<region>\d+)/(?P<content_type>\d+)/', views.DashboardContentBlockCreateView.as_view(), name="create-content-block"),
+    url('^dashboard/cms/content-block/edit/(?P<pk>\d+)/(?P<page>\d+)/(?P<region>\d+)/(?P<content_type>\d+)/', views.DashboardContentBlockEditView.as_view(), name="edit-content-block"),
     url(r'^((?:[\w\-]+/)*)$', views.ServeCMSPageView.as_view()),
 )

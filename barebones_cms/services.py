@@ -69,6 +69,16 @@ class PageService(object):
         block_links = ContentBlockLink.objects.filter(region=region, page=page)
         return [block.model_object for block in block_links]
 
+    def get_content_blocks_info_for_region(self, region, page):
+        block_links = ContentBlockLink.objects.filter(region=region, page=page)
+        region_blocks = []
+        for block in block_links:
+            block_dict = {
+                'model_object': block.model_object,
+                'content_type': block.content_type.pk}
+            region_blocks.append(block_dict)
+        return region_blocks
+
     def get_all_active_root_pages(self):
         return Page.objects.filter(is_deleted=False, parent=None)
 
@@ -169,12 +179,18 @@ class ContentBlockService(object):
     def get_allowed_content_blocks(self):
         return [(model[0], ContentType.objects.get_for_model(model[1]).pk) for model in REGISTERED_CONTENT_BLOCKS]
 
+    def get_model_content_type(self, model):
+        return ContentType.objects.get_for_model(model).pk
+
     def get_contentblock_model(self, content_type):
         content_type = ContentType.objects.get(pk=content_type)
         model_class = content_type.model_class()
         return model_class
 
-    def create_new_block_from_form(self, form):
+    def get_contentblock_by_pk(self, pk, model_class):
+        return model_class.objects.get(pk=pk)
+
+    def save_block_from_form(self, form):
         """ This takes a model form and creates the block object.
             This is not done explicitly because the forms are dynamic.
         """
@@ -190,6 +206,13 @@ class ContentBlockService(object):
                                         object_id=block.pk,
                                         content_type=content_type,
                                         model_object=block)
+
+    def relink_block(self, block, page_pk, region_pk, block_content_type):
+        content_type = ContentType.objects.get(pk=block_content_type)
+        page = Page.objects.get(pk=page_pk)
+        region = Region.objects.get(pk=region_pk)
+        content_block_link = ContentBlockLink.objects.get(object_id=block.pk)
+        return content_block_link
 
 
 class URLService(object):

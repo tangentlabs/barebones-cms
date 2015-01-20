@@ -16,7 +16,7 @@
             <div>
                 {{ region.name }} for block name {{ region.block_name }}
                 {% for content_block in content_blocks %}
-                <p>{{ content_block }}</p>
+                <p><a href="{% url "edit-content-block" pk=content_block.model_object.pk page=page.pk region=region.pk content_type=content_block.content_type %}">{{ content_block.model_object }}</a></p>
                 {% empty %}
                 No content blocks
                 {% endfor %}
