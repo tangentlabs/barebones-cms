@@ -118,17 +118,17 @@ class PageService(object):
                                 is_published=is_published,
                                 **extra_fields)
 
-    def edit_page(self, page_pk, title, slug, page_template, parent, is_published):
+    def edit_page(self, page_pk, **fields_to_update):
+        page = self.get_page_by_pk(page_pk)
+        is_published = fields_to_update.get('is_published', page.is_published)
+        slug = fields_to_update.get('slug', page.slug)
+        parent = fields_to_update.get('parent', page.parent)
         if is_published:
             conflicts = self.check_slug_conflict(slug, parent, page_pk=page_pk)
             if conflicts:
                 raise PageConflictingSlugException
-        page = self.get_page_by_pk(page_pk)
-        page.title = title
-        page.slug = slug
-        page.page_template = page_template
-        page.parent = parent
-        page.is_published = is_published
+        for field_name, value in fields_to_update.iteritems():
+            setattr(page, field_name, value)
         page.save()
         return page
 
