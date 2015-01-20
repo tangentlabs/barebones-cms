@@ -1,4 +1,4 @@
-from django.views.generic import View, TemplateView, FormView
+from django.views.generic import View, TemplateView, FormView, UpdateView
 from django.http import Http404, HttpResponseRedirect
 from django.shortcuts import render
 from django.template import loader, Context
@@ -85,16 +85,53 @@ class DashboardPageCreateView(FormView):
         return URLService().get_page_index_url()
 
 
+class DashboardPageTemplateIndexView(TemplateView):
+    template_name = 'dashboard/cms/pagetemplates_index.html'
+
+    def get_context_data(self):
+        context = super(DashboardPageTemplateIndexView, self).get_context_data()
+        context['page_templates'] = PageService().get_page_templates()
+        return context
+
+
 class DashboardPageTemplateCreateView(FormView):
     template_name = 'dashboard/cms/page_template_create.html'
     form_class = forms.PageTemplateForm
 
     def form_valid(self, form):
-        PageService().create_page_template(self.request.FILES['template_file'])
+        PageService().create_page_template(
+            form.cleaned_data['name'],
+            form.cleaned_data['template_file'])
         return HttpResponseRedirect(self.get_success_url())
 
     def get_success_url(self):
         return URLService().get_page_create_url()
+
+
+class DashboardPageTemplateEditView(FormView):
+    template_name = 'dashboard/cms/page_template_edit.html'
+    form_class = forms.PageTemplateForm
+
+    def dispatch(self, request, *args, **kwargs):
+        self.object = PageService().get_page_template_by_pk(self.kwargs['pk'])
+        return super(DashboardPageTemplateEditView, self).dispatch(request, *args, **kwargs)
+
+    def get_initial(self):
+        return PageService().get_page_template_fields_as_dict(self.object)
+
+    def get_context_data(self, *args, **kwargs):
+        context = super(DashboardPageTemplateEditView, self).get_context_data(*args, **kwargs)
+        context['page_template'] = self.object
+        return context
+
+    def form_valid(self, form):
+        PageService().edit_page_template(self.object.pk,
+                                         form.cleaned_data['name'],
+                                         form.cleaned_data['template_file'])
+        return HttpResponseRedirect(self.get_success_url())
+
+    def get_success_url(self):
+        return URLService().get_page_template_index_url()
 
 
 class DashboardPageEditView(FormView):
@@ -151,7 +188,7 @@ class DashboardTemplateRegionCreateView(FormView):
         return HttpResponseRedirect(self.get_success_url())
 
     def get_success_url(self):
-        return URLService().get_page_edit_url(int(self.kwargs['page']))
+        return URLService().get_page_template_index_url(int(self.kwargs['page']))
 
 
 class DashboardContentBlockCreateView(TemplateView):

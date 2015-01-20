@@ -1,0 +1,11 @@
+<h1>Page Template Edit</h1>
+
+<div>
+
+<form id="edit-page-template-form" name="edit-page-template-form" method="post" enctype="multipart/form-data" action="{% url "edit-page-template" pk=page_template.pk %}">
+{% csrf_token %}
+<p>{{ form.name.label }} {{ form.name }}</p>
+<p>{{ form.template_file.label }} {{ form.template_file }}</p>
+<button type="submit">Save Page Template</button>
+
+</div>

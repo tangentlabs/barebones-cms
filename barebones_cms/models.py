@@ -11,13 +11,14 @@ CMS_APP = getattr(settings, 'BB_CMS_APP_NAME', 'apps.cms').split('.')[-1]
 
 
 class BasePageTemplate(models.Model):
+    name = models.CharField(max_length=200)
     template_file = models.FileField(upload_to='templates/cms/', max_length=200)
 
     class Meta:
         abstract = True
 
     def __unicode__(self):
-        return self.template_file.name
+        return self.name
 
     def __str__(self):
         return self.__unicode__()

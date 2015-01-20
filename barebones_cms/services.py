@@ -78,8 +78,19 @@ class PageService(object):
     def get_page_template_by_page(self, page):
         return page.page_template
 
-    def create_page_template(self, uploaded_file):
-        return PageTemplate.objects.create(template_file=uploaded_file)
+    def get_page_template_by_pk(self, pk):
+        return PageTemplate.objects.get(pk=pk)
+
+    def create_page_template(self, name, uploaded_file):
+        return PageTemplate.objects.create(name=name,
+                                           template_file=uploaded_file)
+
+    def edit_page_template(self, pk, name, uploaded_file):
+        page_template = self.get_page_template_by_pk(pk)
+        page_template.name = name
+        page_template.template_file = uploaded_file
+        page_template.save()
+        return page_template
 
     def create_page(self, title, slug, page_template, parent=None,
                     is_published=False, **extra_fields):
@@ -141,6 +152,9 @@ class PageService(object):
     def get_page_fields_as_dict(self, page):
         return model_to_dict(page)
 
+    def get_page_template_fields_as_dict(self, page_template):
+        return model_to_dict(page_template)
+
 
 class RegionService(object):
     def create_region(self, name, block_name, template):
@@ -194,6 +208,12 @@ class URLService(object):
 
     def get_page_index_url(self):
         default_name = 'pages-index'
+        if DASHBOARD_NAMESPACE is None:
+            return reverse_lazy(default_name)
+        return reverse_lazy(DASHBOARD_NAMESPACE + ':' + default_name)
+
+    def get_page_template_index_url(self):
+        default_name = 'page-template-index'
         if DASHBOARD_NAMESPACE is None:
             return reverse_lazy(default_name)
         return reverse_lazy(DASHBOARD_NAMESPACE + ':' + default_name)
