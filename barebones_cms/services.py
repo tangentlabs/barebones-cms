@@ -91,7 +91,7 @@ class PageService(object):
     def get_page_template_by_pk(self, pk):
         return PageTemplate.objects.get(pk=pk)
 
-    def create_page_template(self, name, uploaded_file):
+    def create_page_template(self, name, uploaded_file, *args, **kwargs):
         return PageTemplate.objects.create(name=name,
                                            template_file=uploaded_file)
 
