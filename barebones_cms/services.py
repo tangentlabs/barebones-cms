@@ -95,7 +95,7 @@ class PageService(object):
         return PageTemplate.objects.create(name=name,
                                            template_file=uploaded_file)
 
-    def edit_page_template(self, pk, name, uploaded_file):
+    def edit_page_template(self, pk, name, uploaded_file, *args, **kwargs):
         page_template = self.get_page_template_by_pk(pk)
         page_template.name = name
         page_template.template_file = uploaded_file
