@@ -78,7 +78,7 @@ class PageService(object):
     def get_page_template_by_page(self, page):
         return page.page_template
 
-    def create_page_template(self, uploaded_file, **extra_fields):
+    def create_page_template(self, template_file, **extra_fields):
         return PageTemplate.objects.create(
             template_file=uploaded_file, **extra_fields)
 
