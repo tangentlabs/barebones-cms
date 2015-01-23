@@ -80,7 +80,7 @@ class PageService(object):
 
     def create_page_template(self, template_file, **extra_fields):
         return PageTemplate.objects.create(
-            template_file=uploaded_file, **extra_fields)
+            template_file=template_file, **extra_fields)
 
     def create_page(self, title, slug, page_template, parent=None,
                     is_published=False, **extra_fields):
