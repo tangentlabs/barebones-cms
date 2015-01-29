@@ -159,12 +159,7 @@ class ContentBlockService(object):
         app_config = apps.get_app_config(CMS_APP.split('.')[-1])
         content_block_classes = []
         for model_class in app_config.get_models():
-            is_content_block = issubclass(model_class, BaseContentBlock)
-            # safer to do this by __name__ than comparing the classes
-            # themselves - otherwise projects overriding the abstract
-            # class will have the abstract class appearing also
-            is_base_class = model_class.__name__ == 'BaseContentBlock'
-            if is_content_block and not is_base_class:
+            if issubclass(model_class, BaseContentBlock):
                 class_name = model_class._meta.verbose_name.title()
                 content_type = ContentType.objects.get_for_model(model_class)
                 content_block_classes.append((class_name, content_type.pk))
