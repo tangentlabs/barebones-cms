@@ -7,6 +7,7 @@ from django.forms import model_to_dict
 
 from barebones_cms.models import REGISTERED_CONTENT_BLOCKS
 
+
 # Allow the cms app to be completely overridden with another namespace
 CMS_APP = getattr(settings, 'BB_CMS_APP_NAME', 'apps.cms').split('.')[-1]
 # Allow url namespacing for the dashboard
@@ -91,9 +92,9 @@ class PageService(object):
     def get_page_template_by_pk(self, pk):
         return PageTemplate.objects.get(pk=pk)
 
-    def create_page_template(self, name, uploaded_file, *args, **kwargs):
-        return PageTemplate.objects.create(name=name,
-                                           template_file=uploaded_file)
+    def create_page_template(self, template_file, **extra_fields):
+        return PageTemplate.objects.create(
+            template_file=template_file, **extra_fields)
 
     def edit_page_template(self, pk, name, uploaded_file, *args, **kwargs):
         page_template = self.get_page_template_by_pk(pk)
@@ -139,17 +140,17 @@ class PageService(object):
                                 is_published=is_published,
                                 **extra_fields)
 
-    def edit_page(self, page_pk, title, slug, page_template, parent, is_published):
+    def edit_page(self, page_pk, **fields_to_update):
+        page = self.get_page_by_pk(page_pk)
+        is_published = fields_to_update.get('is_published', page.is_published)
+        slug = fields_to_update.get('slug', page.slug)
+        parent = fields_to_update.get('parent', page.parent)
         if is_published:
             conflicts = self.check_slug_conflict(slug, parent, page_pk=page_pk)
             if conflicts:
                 raise PageConflictingSlugException
-        page = self.get_page_by_pk(page_pk)
-        page.title = title
-        page.slug = slug
-        page.page_template = page_template
-        page.parent = parent
-        page.is_published = is_published
+        for field_name, value in fields_to_update.iteritems():
+            setattr(page, field_name, value)
         page.save()
         return page
 
@@ -167,9 +168,9 @@ class PageService(object):
 
 
 class RegionService(object):
-    def create_region(self, name, block_name, template):
+    def create_region(self, name, block_name, template, **extra_fields):
         Region.objects.create(
-            name=name, block_name=block_name, template=template)
+            name=name, block_name=block_name, template=template, **extra_fields)
 
     def get_regions_for_page(self, page):
         return page.page_template.region_set.all()
