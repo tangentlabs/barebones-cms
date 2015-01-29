@@ -76,9 +76,3 @@ class BaseContentBlock(models.Model):
 # Content Blocks
 class SimpleContentBlock(BaseContentBlock):
     content = models.CharField(max_length=255)
-
-
-# Register allowed content blocks by adding them here
-REGISTERED_CONTENT_BLOCKS = [
-    ('Simple Content Block', SimpleContentBlock),
-]

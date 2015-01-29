@@ -4,8 +4,10 @@ from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
 from django.db.models.loading import get_model
 from django.forms import model_to_dict
+from django.apps import apps
 
-from barebones_cms.models import REGISTERED_CONTENT_BLOCKS
+from barebones_cms.models import BaseContentBlock
+
 
 # Allow the cms app to be completely overridden with another namespace
 CMS_APP = getattr(settings, 'BB_CMS_APP_NAME', 'apps.cms').split('.')[-1]
@@ -154,7 +156,14 @@ class RegionService(object):
 
 class ContentBlockService(object):
     def get_allowed_content_blocks(self):
-        return [(model[0], ContentType.objects.get_for_model(model[1]).pk) for model in REGISTERED_CONTENT_BLOCKS]
+        app_config = apps.get_app_config(CMS_APP.split('.')[-1])
+        content_block_classes = []
+        for model_class in app_config.get_models():
+            if issubclass(model_class, BaseContentBlock):
+                class_name = model_class._meta.verbose_name.title()
+                content_type = ContentType.objects.get_for_model(model_class)
+                content_block_classes.append((class_name, content_type.pk))
+        return content_block_classes
 
     def get_contentblock_model(self, content_type):
         content_type = ContentType.objects.get(pk=content_type)
