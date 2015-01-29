@@ -6,6 +6,8 @@ from django.db.models.loading import get_model
 from django.forms import model_to_dict
 from django.apps import apps
 
+from barebones_cms.models import BaseContentBlock
+
 
 # Allow the cms app to be completely overridden with another namespace
 CMS_APP = getattr(settings, 'BB_CMS_APP_NAME', 'apps.cms').split('.')[-1]
@@ -18,7 +20,6 @@ Page = get_model(CMS_APP, 'Page')
 PageTemplate = get_model(CMS_APP, 'PageTemplate')
 Region = get_model(CMS_APP, 'Region')
 ContentBlockLink = get_model(CMS_APP, 'ContentBlockLink')
-BaseContentBlock = get_model(CMS_APP, 'BaseContentBlock')
 
 
 class PageService(object):
@@ -159,7 +160,10 @@ class ContentBlockService(object):
         content_block_classes = []
         for model_class in app_config.get_models():
             is_content_block = issubclass(model_class, BaseContentBlock)
-            is_base_class = model_class is BaseContentBlock
+            # safer to do this by __name__ than comparing the classes
+            # themselves - otherwise projects overriding the abstract
+            # class will have the abstract class appearing also
+            is_base_class = model_class.__name__ == 'BaseContentBlock'
             if is_content_block and not is_base_class:
                 class_name = model_class._meta.verbose_name.title()
                 content_type = ContentType.objects.get_for_model(model_class)
