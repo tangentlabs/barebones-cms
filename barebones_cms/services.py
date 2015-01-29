@@ -92,14 +92,14 @@ class PageService(object):
     def get_page_template_by_pk(self, pk):
         return PageTemplate.objects.get(pk=pk)
 
-    def create_page_template(self, template_file, **extra_fields):
+    def create_page_template(self, name, template_file, **extra_fields):
         return PageTemplate.objects.create(
-            template_file=template_file, **extra_fields)
+            name=name, template_file=template_file, **extra_fields)
 
-    def edit_page_template(self, pk, name, uploaded_file, *args, **kwargs):
-        page_template = self.get_page_template_by_pk(pk)
-        page_template.name = name
-        page_template.template_file = uploaded_file
+    def edit_page_template(self, template_pk, **fields_to_update):
+        page_template = self.get_page_template_by_pk(template_pk)
+        for field_name, value in fields_to_update.iteritems():
+            setattr(page_template, field_name, value)
         page_template.save()
         return page_template
 
