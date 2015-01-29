@@ -78,8 +78,9 @@ class PageService(object):
     def get_page_template_by_page(self, page):
         return page.page_template
 
-    def create_page_template(self, uploaded_file):
-        return PageTemplate.objects.create(template_file=uploaded_file)
+    def create_page_template(self, template_file, **extra_fields):
+        return PageTemplate.objects.create(
+            template_file=template_file, **extra_fields)
 
     def create_page(self, title, slug, page_template, parent=None,
                     is_published=False, **extra_fields):
@@ -143,9 +144,9 @@ class PageService(object):
 
 
 class RegionService(object):
-    def create_region(self, name, block_name, template):
+    def create_region(self, name, block_name, template, **extra_fields):
         Region.objects.create(
-            name=name, block_name=block_name, template=template)
+            name=name, block_name=block_name, template=template, **extra_fields)
 
     def get_regions_for_page(self, page):
         return page.page_template.region_set.all()
