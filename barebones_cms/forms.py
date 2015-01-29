@@ -24,6 +24,7 @@ class PageForm(forms.Form):
 
 
 class PageTemplateForm(forms.Form):
+    name = forms.CharField(max_length=200)
     template_file = forms.FileField(max_length=255)
 
 

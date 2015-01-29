@@ -1,4 +1,4 @@
-from django.views.generic import View, TemplateView, FormView
+from django.views.generic import View, TemplateView, FormView, UpdateView
 from django.http import Http404, HttpResponseRedirect
 from django.shortcuts import render
 from django.template import loader, Context
@@ -85,16 +85,53 @@ class DashboardPageCreateView(FormView):
         return URLService().get_page_index_url()
 
 
+class DashboardPageTemplateIndexView(TemplateView):
+    template_name = 'dashboard/cms/pagetemplates_index.html'
+
+    def get_context_data(self):
+        context = super(DashboardPageTemplateIndexView, self).get_context_data()
+        context['page_templates'] = PageService().get_page_templates()
+        return context
+
+
 class DashboardPageTemplateCreateView(FormView):
     template_name = 'dashboard/cms/page_template_create.html'
     form_class = forms.PageTemplateForm
 
     def form_valid(self, form):
-        PageService().create_page_template(self.request.FILES['template_file'])
+        PageService().create_page_template(
+            form.cleaned_data['name'],
+            form.cleaned_data['template_file'])
         return HttpResponseRedirect(self.get_success_url())
 
     def get_success_url(self):
         return URLService().get_page_create_url()
+
+
+class DashboardPageTemplateEditView(FormView):
+    template_name = 'dashboard/cms/page_template_edit.html'
+    form_class = forms.PageTemplateForm
+
+    def dispatch(self, request, *args, **kwargs):
+        self.object = PageService().get_page_template_by_pk(self.kwargs['pk'])
+        return super(DashboardPageTemplateEditView, self).dispatch(request, *args, **kwargs)
+
+    def get_initial(self):
+        return PageService().get_page_template_fields_as_dict(self.object)
+
+    def get_context_data(self, *args, **kwargs):
+        context = super(DashboardPageTemplateEditView, self).get_context_data(*args, **kwargs)
+        context['page_template'] = self.object
+        return context
+
+    def form_valid(self, form):
+        PageService().edit_page_template(self.object.pk,
+                                         form.cleaned_data['name'],
+                                         form.cleaned_data['template_file'])
+        return HttpResponseRedirect(self.get_success_url())
+
+    def get_success_url(self):
+        return URLService().get_page_template_index_url()
 
 
 class DashboardPageEditView(FormView):
@@ -118,7 +155,8 @@ class DashboardPageEditView(FormView):
         context['page_template'] = page_template
         region_context = {}
         for region in RegionService().get_regions_for_page(self.object):
-            content_blocks = service.get_content_blocks_for_region(region, self.object)
+            content_blocks = service.get_content_blocks_info_for_region(
+                region, self.object)
             region_context[region] = content_blocks
         context['regions'] = region_context
         context['allowed_content_blocks'] = ContentBlockService().get_allowed_content_blocks()
@@ -154,13 +192,18 @@ class DashboardTemplateRegionCreateView(FormView):
         return URLService().get_page_edit_url(int(self.kwargs['page']))
 
 
-class DashboardContentBlockCreateView(TemplateView):
-    template_name = 'dashboard/cms/contentblock_create.html'
-
+# The content block views are subclassed as they do a lot of boilerplate
+# things for the dynamic models and require a small amount of difference
+class DashboardContentBlockBaseView(TemplateView):
     def post(self, request, *args, **kwargs):
         # Do some form validation
-        form_class = self.get_form_class()
-        form = form_class(request.POST, request.FILES)
+        form_class, model = self.get_form_class_and_model()
+        if self.kwargs.has_key('pk'):
+            instance = ContentBlockService().get_contentblock_by_pk(
+                self.kwargs['pk'], model)
+            form = form_class(request.POST, request.FILES, instance=instance)
+        else:
+            form = form_class(request.POST, request.FILES)
         form_valid = form.is_valid()
         if form_valid:
             return self.form_valid(form)
@@ -168,25 +211,26 @@ class DashboardContentBlockCreateView(TemplateView):
             return self.form_invalid(form)
 
     def get_context_data(self, *args, **kwargs):
-        context = super(DashboardContentBlockCreateView, self).get_context_data(*args, **kwargs)
+        context = super(DashboardContentBlockBaseView, self).get_context_data(*args, **kwargs)
         context.update(self.kwargs)
 
         if 'form' in kwargs.keys():
             form = kwargs['form']
         else:
-            form = self.get_form_class()()
+            form_class, model = self.get_form_class_and_model()
+            form = form_class()
         context['form'] = form
         return context
 
-    def get_form_class(self):
+    def get_form_class_and_model(self):
         contentblock_model = ContentBlockService().get_contentblock_model(
             self.kwargs['content_type'])
         form_class = forms.get_modelform(contentblock_model)
-        return form_class
+        return form_class, contentblock_model
 
     def form_valid(self, form):
         service = ContentBlockService()
-        block = service.create_new_block_from_form(form)
+        block = service.save_block_from_form(form)
         service.link_block(
             block,
             self.kwargs['page'],
@@ -200,3 +244,31 @@ class DashboardContentBlockCreateView(TemplateView):
 
     def get_success_url(self):
         return URLService().get_page_edit_url(int(self.kwargs['page']))
+
+
+class DashboardContentBlockCreateView(DashboardContentBlockBaseView):
+    template_name = 'dashboard/cms/contentblock_create.html'
+
+
+class DashboardContentBlockEditView(DashboardContentBlockBaseView):
+    template_name = 'dashboard/cms/contentblock_edit.html'
+
+    def get_context_data(self, *args, **kwargs):
+        context = super(DashboardContentBlockEditView, self).get_context_data(*args, **kwargs)
+        form_class, model_class = self.get_form_class_and_model()
+        instance = ContentBlockService().get_contentblock_by_pk(
+            self.kwargs['pk'], model_class)
+        form = form_class(instance=instance)
+        context['form'] = form
+        return context
+
+    def form_valid(self, form):
+        service = ContentBlockService()
+        block = service.save_block_from_form(form)
+        service.relink_block(
+            block,
+            self.kwargs['page'],
+            self.kwargs['region'],
+            self.kwargs['content_type'])
+
+        return HttpResponseRedirect(self.get_success_url())

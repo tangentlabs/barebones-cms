@@ -1,0 +1,12 @@
+<h1>Page Templates Index</h1>
+
+<div>
+<p><a href="{% url "create-page-template" %}">Create New Page Tenplate</a></p>
+    <div>
+    {% for template in page_templates %}
+    <a href="{% url "edit-page-template" pk=template.pk %}">{{ template.name }}</a>
+    {% empty %}
+    No page templates
+    {% endfor %}
+    </div>
+</div>

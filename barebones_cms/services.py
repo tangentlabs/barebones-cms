@@ -9,6 +9,7 @@ from django.apps import apps
 from barebones_cms.models import BaseContentBlock
 
 
+
 # Allow the cms app to be completely overridden with another namespace
 CMS_APP = getattr(settings, 'BB_CMS_APP_NAME', 'apps.cms').split('.')[-1]
 # Allow url namespacing for the dashboard
@@ -71,6 +72,16 @@ class PageService(object):
         block_links = ContentBlockLink.objects.filter(region=region, page=page)
         return [block.model_object for block in block_links]
 
+    def get_content_blocks_info_for_region(self, region, page):
+        block_links = ContentBlockLink.objects.filter(region=region, page=page)
+        region_blocks = []
+        for block in block_links:
+            block_dict = {
+                'model_object': block.model_object,
+                'content_type': block.content_type.pk}
+            region_blocks.append(block_dict)
+        return region_blocks
+
     def get_all_active_root_pages(self):
         return Page.objects.filter(is_deleted=False, parent=None)
 
@@ -80,9 +91,19 @@ class PageService(object):
     def get_page_template_by_page(self, page):
         return page.page_template
 
-    def create_page_template(self, template_file, **extra_fields):
+    def get_page_template_by_pk(self, pk):
+        return PageTemplate.objects.get(pk=pk)
+
+    def create_page_template(self, name, template_file, **extra_fields):
         return PageTemplate.objects.create(
-            template_file=template_file, **extra_fields)
+            name=name, template_file=template_file, **extra_fields)
+
+    def edit_page_template(self, template_pk, **fields_to_update):
+        page_template = self.get_page_template_by_pk(template_pk)
+        for field_name, value in fields_to_update.iteritems():
+            setattr(page_template, field_name, value)
+        page_template.save()
+        return page_template
 
     def create_page(self, title, slug, page_template, parent=None,
                     is_published=False, **extra_fields):
@@ -144,6 +165,9 @@ class PageService(object):
     def get_page_fields_as_dict(self, page):
         return model_to_dict(page)
 
+    def get_page_template_fields_as_dict(self, page_template):
+        return model_to_dict(page_template)
+
 
 class RegionService(object):
     def create_region(self, name, block_name, template, **extra_fields):
@@ -165,12 +189,18 @@ class ContentBlockService(object):
                 content_block_classes.append((class_name, content_type.pk))
         return content_block_classes
 
+    def get_model_content_type(self, model):
+        return ContentType.objects.get_for_model(model).pk
+
     def get_contentblock_model(self, content_type):
         content_type = ContentType.objects.get(pk=content_type)
         model_class = content_type.model_class()
         return model_class
 
-    def create_new_block_from_form(self, form):
+    def get_contentblock_by_pk(self, pk, model_class):
+        return model_class.objects.get(pk=pk)
+
+    def save_block_from_form(self, form):
         """ This takes a model form and creates the block object.
             This is not done explicitly because the forms are dynamic.
         """
@@ -186,6 +216,13 @@ class ContentBlockService(object):
                                         object_id=block.pk,
                                         content_type=content_type,
                                         model_object=block)
+
+    def relink_block(self, block, page_pk, region_pk, block_content_type):
+        content_type = ContentType.objects.get(pk=block_content_type)
+        page = Page.objects.get(pk=page_pk)
+        region = Region.objects.get(pk=region_pk)
+        content_block_link = ContentBlockLink.objects.get(object_id=block.pk)
+        return content_block_link
 
 
 class URLService(object):
@@ -204,6 +241,12 @@ class URLService(object):
 
     def get_page_index_url(self):
         default_name = 'pages-index'
+        if DASHBOARD_NAMESPACE is None:
+            return reverse_lazy(default_name)
+        return reverse_lazy(DASHBOARD_NAMESPACE + ':' + default_name)
+
+    def get_page_template_index_url(self):
+        default_name = 'page-template-index'
         if DASHBOARD_NAMESPACE is None:
             return reverse_lazy(default_name)
         return reverse_lazy(DASHBOARD_NAMESPACE + ':' + default_name)

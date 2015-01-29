@@ -1,0 +1,9 @@
+<h1>Content Block Edit</h1>
+
+<div>
+<form id="edit-block-form" name="edit-block-form" method="post" enctype="multipart/form-data" action="{% url "edit-content-block" pk=pk page=page region=region content_type=content_type %}">
+{% csrf_token %}
+<p>{{ form.as_p }}</p>
+<button type="submit">Edit</button>
+
+</div>

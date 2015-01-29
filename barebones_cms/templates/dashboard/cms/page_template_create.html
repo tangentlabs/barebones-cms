@@ -4,6 +4,7 @@
 
 <form id="create-page-template-form" name="create-page-template-form" method="post" enctype="multipart/form-data" action="{% url "create-page-template" %}">
 {% csrf_token %}
+<p>{{ form.name.label }} {{ form.name }}</p>
 <p>{{ form.template_file.label }} {{ form.template_file }}</p>
 <button type="submit">Create Page Template</button>
 
