@@ -6,7 +6,7 @@ from barebones_cms.services import PageService
 
 class PageForm(forms.Form):
     title = forms.CharField(max_length=255)
-    slug = forms.CharField(max_length=255)
+    slug = forms.SlugField(max_length=100)
     page_template = forms.ModelChoiceField(queryset=None)
     parent = forms.ModelChoiceField(queryset=None, required=False)
     is_published = forms.BooleanField(required=False)
